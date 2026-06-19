@@ -32,6 +32,21 @@ FRACTION_WORDS = {
     "3/4": "three quarters",
 }
 
+# Unicode fraction characters → voice-friendly words
+UNICODE_FRACTIONS = {
+    "\u00bc": "a quarter",      # ¼
+    "\u00bd": "a half",         # ½
+    "\u00be": "three quarters", # ¾
+    "\u2153": "a third",        # ⅓
+    "\u2154": "two thirds",     # ⅔
+    "\u215b": "one eighth",     # ⅛
+    "\u215c": "three eighths",  # ⅜
+    "\u215d": "five eighths",   # ⅝
+    "\u215e": "seven eighths",  # ⅞
+    "\u2159": "one sixth",      # ⅙
+    "\u215a": "five sixths",    # ⅚
+}
+
 # Whole number words for mixed numbers
 WHOLE_WORDS = {
     "1": "one",
@@ -50,11 +65,25 @@ WHOLE_WORDS = {
 def normalize_fractions(text: str) -> str:
     """Replace common cooking fractions with voice-friendly words.
 
+    Handles both ASCII fractions (1/2, 1 1/2) and Unicode fractions (½, 1¼).
+
     Examples:
         "1/2 cup"       → "a half cup"
         "1 1/2 cups"    → "one and a half cups"
         "3/4 tsp"       → "three quarters tsp"
+        "1¼ cups"       → "one and a quarter cups"
+        "½ tsp"         → "a half tsp"
     """
+    # Unicode fractions first: "½" → "a half", "1¼" → "one and a quarter"
+    # Mixed unicode: "1¼" → "one and a quarter"
+    for frac_char, word in UNICODE_FRACTIONS.items():
+        # Mixed numbers with unicode: "1¼" → "one and a quarter"
+        for whole, whole_word in WHOLE_WORDS.items():
+            mixed = whole + frac_char
+            text = text.replace(mixed, whole_word + " and " + word)
+        # Standalone unicode fraction: "½" → "a half"
+        text = text.replace(frac_char, word)
+
     # Mixed numbers: "1 1/2" → "one and a half"
     mixed_pattern = re.compile(
         r"\b(" + "|".join(WHOLE_WORDS.keys()) + r")\s+(" + "|".join(FRACTION_WORDS.keys()) + r")\b"
