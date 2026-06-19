@@ -284,6 +284,8 @@
         ingredientsEl.value = data.ingredients || '';
         directionsEl.value = data.directions || '';
         notesEl.value = data.notes || '';
+        // Clear the import textarea for the next import
+        importTextEl.value = '';
         // Switch to edit tab so user can review
         tabEdit.click();
         showToast('✅ Recipe imported! Review and save if needed.');
