@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse
 
 from fastmcp.utilities.lifespan import combine_lifespans
 
-from data import RECIPE_FILE, RecipeInput, load_recipe, save_recipe
+from data import RECIPE_FILE, RecipeInput, load_recipe, save_recipe, import_recipe
 from mcp_server import mcp
 
 # ---------------------------------------------------------------------------
@@ -48,6 +48,17 @@ async def api_get_recipe():
 @app.post("/api/save-recipe")
 async def api_save_recipe(recipe: RecipeInput):
     return save_recipe(recipe.model_dump())
+
+
+from pydantic import BaseModel
+
+class RecipeImportInput(BaseModel):
+    text: str
+
+
+@app.post("/api/import-recipe")
+async def api_import_recipe(recipe_import: RecipeImportInput):
+    return import_recipe(recipe_import.text)
 
 
 # ---------------------------------------------------------------------------

@@ -105,29 +105,97 @@
       transform: translateX(-50%) translateY(0);
       opacity: 1;
     }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.6rem;
+      background: #edf2f7;
+      color: #4a5568;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+    }
+
+    .tab:hover:not(.active) {
+      background: #e2e8f0;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .import-textarea {
+      min-height: 200px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+    }
+
+    .import-hint {
+      color: #a0aec0;
+      font-size: 0.8rem;
+      margin-top: 0.4rem;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>🍳 Recipe Manager</h1>
-    <p class="subtitle">Edit your recipe below and save changes.</p>
+    <p class="subtitle">Edit your recipe below or import from plain text.</p>
 
-    <div class="field">
-      <label for="recipe-name">Recipe Name</label>
-      <input type="text" id="recipe-name" placeholder="Enter recipe name">
+    <div class="tabs">
+      <button class="tab active" id="tab-edit">✏️ Edit</button>
+      <button class="tab" id="tab-import">📋 Import</button>
     </div>
 
-    <div class="field">
-      <label for="recipe-ingredients">Ingredients</label>
-      <textarea id="recipe-ingredients" rows="5" placeholder="List ingredients here..."></textarea>
+    <!-- Edit Panel -->
+    <div class="panel active" id="panel-edit">
+      <div class="field">
+        <label for="recipe-name">Recipe Name</label>
+        <input type="text" id="recipe-name" placeholder="Enter recipe name">
+      </div>
+
+      <div class="field">
+        <label for="recipe-ingredients">Ingredients</label>
+        <textarea id="recipe-ingredients" rows="5" placeholder="List ingredients here..."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="recipe-directions">Directions</label>
+        <textarea id="recipe-directions" rows="6" placeholder="Step-by-step directions..."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="recipe-notes">Notes</label>
+        <textarea id="recipe-notes" rows="3" placeholder="Tips, substitutions, comments..."></textarea>
+      </div>
+
+      <button id="save-btn">Save Recipe</button>
     </div>
 
-    <div class="field">
-      <label for="recipe-directions">Directions</label>
-      <textarea id="recipe-directions" rows="6" placeholder="Step-by-step directions..."></textarea>
-    </div>
+    <!-- Import Panel -->
+    <div class="panel" id="panel-import">
+      <div class="field">
+        <label for="import-text">Paste Recipe Text</label>
+        <textarea id="import-text" class="import-textarea" placeholder="Paste your recipe text here...&#10;&#10;First line should be the recipe title, followed by Ingredients:, Directions:, and optional Notes: sections."></textarea>
+        <p class="import-hint">Parses plain-text recipe blocks. First line = title. Sections: Ingredients:, Directions:, Notes:.</p>
+      </div>
 
-    <button id="save-btn">Save Recipe</button>
+      <button id="import-btn">Parse &amp; Save</button>
+    </div>
   </div>
 
   <div class="toast" id="toast">✅ Recipe saved successfully!</div>
@@ -136,8 +204,31 @@
     const nameEl = document.getElementById('recipe-name');
     const ingredientsEl = document.getElementById('recipe-ingredients');
     const directionsEl = document.getElementById('recipe-directions');
+    const notesEl = document.getElementById('recipe-notes');
     const saveBtn = document.getElementById('save-btn');
+    const importBtn = document.getElementById('import-btn');
+    const importTextEl = document.getElementById('import-text');
     const toast = document.getElementById('toast');
+
+    // Tab switching
+    const tabEdit = document.getElementById('tab-edit');
+    const tabImport = document.getElementById('tab-import');
+    const panelEdit = document.getElementById('panel-edit');
+    const panelImport = document.getElementById('panel-import');
+
+    tabEdit.addEventListener('click', () => {
+      tabEdit.classList.add('active');
+      tabImport.classList.remove('active');
+      panelEdit.classList.add('active');
+      panelImport.classList.remove('active');
+    });
+
+    tabImport.addEventListener('click', () => {
+      tabImport.classList.add('active');
+      tabEdit.classList.remove('active');
+      panelImport.classList.add('active');
+      panelEdit.classList.remove('active');
+    });
 
     // Load recipe on page load
     async function loadRecipe() {
@@ -147,6 +238,7 @@
         nameEl.value = data.name || '';
         ingredientsEl.value = data.ingredients || '';
         directionsEl.value = data.directions || '';
+        notesEl.value = data.notes || '';
       } catch (err) {
         console.error('Failed to load recipe:', err);
       }
@@ -158,6 +250,7 @@
         name: nameEl.value,
         ingredients: ingredientsEl.value,
         directions: directionsEl.value,
+        notes: notesEl.value,
       };
       try {
         await fetch('/api/save-recipe', {
@@ -165,18 +258,49 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        showToast();
+        showToast('✅ Recipe saved successfully!');
       } catch (err) {
         console.error('Failed to save recipe:', err);
+        showToast('❌ Failed to save recipe');
       }
     }
 
-    function showToast() {
+    // Import recipe from plain text
+    async function importRecipe() {
+      const text = importTextEl.value.trim();
+      if (!text) {
+        showToast('⚠️ Please paste recipe text first');
+        return;
+      }
+      try {
+        const res = await fetch('/api/import-recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        const data = await res.json();
+        // Populate edit fields with parsed data
+        nameEl.value = data.name || '';
+        ingredientsEl.value = data.ingredients || '';
+        directionsEl.value = data.directions || '';
+        notesEl.value = data.notes || '';
+        // Switch to edit tab so user can review
+        tabEdit.click();
+        showToast('✅ Recipe imported! Review and save if needed.');
+      } catch (err) {
+        console.error('Failed to import recipe:', err);
+        showToast('❌ Failed to import recipe');
+      }
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
     saveBtn.addEventListener('click', saveRecipe);
+    importBtn.addEventListener('click', importRecipe);
     loadRecipe();
   </script>
 </body>

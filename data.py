@@ -23,6 +23,7 @@ class RecipeInput(BaseModel):
     name: str
     ingredients: str
     directions: str
+    notes: str = ""
 
 # ---------------------------------------------------------------------------
 # I/O helpers
@@ -41,3 +42,10 @@ def save_recipe(data: dict) -> dict:
     RECIPE_FILE.parent.mkdir(parents=True, exist_ok=True)
     RECIPE_FILE.write_text(json.dumps(data, indent=2))
     return load_recipe()
+
+
+def import_recipe(text: str) -> dict:
+    """Parse a plain-text recipe block and save it to disk."""
+    from parser import parse_recipe_text
+    parsed = parse_recipe_text(text)
+    return save_recipe(parsed)
