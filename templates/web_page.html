@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Manager</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+                   Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      color: #2d3748;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      color: #718096;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: #667eea;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .field { margin-bottom: 1.25rem; }
+
+    button {
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:hover { opacity: 0.92; }
+    button:active { transform: scale(0.98); }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #48bb78;
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🍳 Recipe Manager</h1>
+    <p class="subtitle">Edit your recipe below and save changes.</p>
+
+    <div class="field">
+      <label for="recipe-name">Recipe Name</label>
+      <input type="text" id="recipe-name" placeholder="Enter recipe name">
+    </div>
+
+    <div class="field">
+      <label for="recipe-ingredients">Ingredients</label>
+      <textarea id="recipe-ingredients" rows="5" placeholder="List ingredients here..."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="recipe-directions">Directions</label>
+      <textarea id="recipe-directions" rows="6" placeholder="Step-by-step directions..."></textarea>
+    </div>
+
+    <button id="save-btn">Save Recipe</button>
+  </div>
+
+  <div class="toast" id="toast">✅ Recipe saved successfully!</div>
+
+  <script>
+    const nameEl = document.getElementById('recipe-name');
+    const ingredientsEl = document.getElementById('recipe-ingredients');
+    const directionsEl = document.getElementById('recipe-directions');
+    const saveBtn = document.getElementById('save-btn');
+    const toast = document.getElementById('toast');
+
+    // Load recipe on page load
+    async function loadRecipe() {
+      try {
+        const res = await fetch('/api/get-recipe');
+        const data = await res.json();
+        nameEl.value = data.name || '';
+        ingredientsEl.value = data.ingredients || '';
+        directionsEl.value = data.directions || '';
+      } catch (err) {
+        console.error('Failed to load recipe:', err);
+      }
+    }
+
+    // Save recipe on button click
+    async function saveRecipe() {
+      const payload = {
+        name: nameEl.value,
+        ingredients: ingredientsEl.value,
+        directions: directionsEl.value,
+      };
+      try {
+        await fetch('/api/save-recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        showToast();
+      } catch (err) {
+        console.error('Failed to save recipe:', err);
+      }
+    }
+
+    function showToast() {
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    saveBtn.addEventListener('click', saveRecipe);
+    loadRecipe();
+  </script>
+</body>
+</html>
