@@ -17,9 +17,57 @@ Nutrition and source lines are dropped.
 
 import re
 
-
 # Section headers we recognise (order matters – first match wins)
 SECTION_HEADERS = ["ingredients", "directions", "notes", "nutrition", "source"]
+
+# Fraction → voice-friendly word mapping
+FRACTION_WORDS = {
+    "1/16": "one sixteenth",
+    "1/8": "one eighth",
+    "3/8": "three eighths",
+    "1/4": "a quarter",
+    "1/3": "a third",
+    "1/2": "a half",
+    "2/3": "two thirds",
+    "3/4": "three quarters",
+}
+
+# Whole number words for mixed numbers
+WHOLE_WORDS = {
+    "1": "one",
+    "2": "two",
+    "3": "three",
+    "4": "four",
+    "5": "five",
+    "6": "six",
+    "7": "seven",
+    "8": "eight",
+    "9": "nine",
+    "10": "ten",
+}
+
+
+def normalize_fractions(text: str) -> str:
+    """Replace common cooking fractions with voice-friendly words.
+
+    Examples:
+        "1/2 cup"       → "a half cup"
+        "1 1/2 cups"    → "one and a half cups"
+        "3/4 tsp"       → "three quarters tsp"
+    """
+    # Mixed numbers: "1 1/2" → "one and a half"
+    mixed_pattern = re.compile(
+        r"\b(" + "|".join(WHOLE_WORDS.keys()) + r")\s+(" + "|".join(FRACTION_WORDS.keys()) + r")\b"
+    )
+    text = mixed_pattern.sub(
+        lambda m: WHOLE_WORDS[m.group(1)] + " and " + FRACTION_WORDS[m.group(2)], text
+    )
+
+    # Simple fractions: "1/2" → "a half"
+    for frac, word in FRACTION_WORDS.items():
+        text = text.replace(frac, word)
+
+    return text
 
 
 def _find_section(text: str, header: str) -> tuple[int, int] | None:

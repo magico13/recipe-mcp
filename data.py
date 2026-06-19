@@ -38,7 +38,21 @@ def load_recipe() -> dict:
 
 
 def save_recipe(data: dict) -> dict:
-    """Persist recipe data to disk and return the saved recipe."""
+    """Persist recipe data to disk and return the saved recipe.
+
+    Normalizes fractions (e.g. "1/2" → "a half") in ingredients and directions
+    so voice assistants read them naturally.
+    """
+    from parser import normalize_fractions
+
+    # Normalize fractions in text fields before saving
+    if "ingredients" in data and data["ingredients"]:
+        data["ingredients"] = normalize_fractions(data["ingredients"])
+    if "directions" in data and data["directions"]:
+        data["directions"] = normalize_fractions(data["directions"])
+    if "notes" in data and data["notes"]:
+        data["notes"] = normalize_fractions(data["notes"])
+
     RECIPE_FILE.parent.mkdir(parents=True, exist_ok=True)
     RECIPE_FILE.write_text(json.dumps(data, indent=2))
     return load_recipe()
