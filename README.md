@@ -37,11 +37,15 @@ Open `http://localhost:8002` in your browser.
 
 ### Edit Tab
 
-Four fields: **Recipe Name**, **Ingredients**, **Directions**, and **Notes**. Edit any field and click **Save Recipe** to persist changes.
+Four fields: **Recipe Name**, **Ingredients**, **Directions**, and **Notes**. Edit any field and click **Save Recipe** to persist changes. Fractions are normalized on save so voice assistants read them naturally.
+
+![Edit Tab](docs/screenshots/edit-tab.jpg)
 
 ### Import Tab
 
 Paste a plain-text recipe block and click **Parse & Save**. The parser extracts the title, ingredients, directions, and notes, then switches to the Edit tab so you can review before saving.
+
+![Import Tab](docs/screenshots/import-tab.jpg)
 
 **Expected format:**
 
